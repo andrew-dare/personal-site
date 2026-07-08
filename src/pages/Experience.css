@@ -1,0 +1,105 @@
+.page-title {
+  font-size: 32px;
+  margin-bottom: 40px;
+}
+
+.section-title {
+  font-size: 20px;
+  margin: 56px 0 20px;
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.role {
+  border-left: 2px solid var(--border);
+  padding-left: 20px;
+  position: relative;
+}
+
+.role::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 6px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.role-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.role-header h2 {
+  font-size: 19px;
+}
+
+.role-company {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.role-dates {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.role-team {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.role-highlights {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.role-highlights li {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.competencies {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.competency {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  background: var(--bg-raised);
+}
+
+.competency-label {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.competency-items {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.education {
+  font-size: 15px;
+}

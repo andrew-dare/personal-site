@@ -1,0 +1,22 @@
+import { Link } from 'react-router-dom'
+import { profile } from '../data/resume'
+import './Home.css'
+
+export default function Home() {
+  return (
+    <section className="home">
+      <p className="eyebrow">Hi, I'm</p>
+      <h1 className="home-title">{profile.name}</h1>
+      <p className="home-role">{profile.title} · {profile.location}</p>
+      <p className="home-summary">{profile.summary}</p>
+      <div className="home-actions">
+        <Link to="/experience" className="btn btn-primary">
+          See my experience
+        </Link>
+        <Link to="/contact" className="btn btn-secondary">
+          Get in touch
+        </Link>
+      </div>
+    </section>
+  )
+}
