@@ -7,10 +7,9 @@ export const profile = {
   site: 'www.dare.dev',
   summary:
     "Full-stack software engineer with nearly a decade of experience shipping customer-facing billing, growth, and real-time features at Dropbox and Atlassian. Strong in TypeScript, Node.js, and React, and skilled at translating complex engineering problems into language technical and non-technical stakeholders can act on.",
-  // Placeholder — not in resume, update with real profiles.
   social: {
-    github: 'https://github.com/PLACEHOLDER',
-    linkedin: 'https://linkedin.com/in/PLACEHOLDER',
+    github: 'github.com/andrew-dare',
+    linkedin: 'linkedin.com/in/andrewdare',
   },
 }
 
