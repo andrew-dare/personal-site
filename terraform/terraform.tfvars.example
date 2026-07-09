@@ -1,0 +1,5 @@
+# Copy to terraform.tfvars and fill in the AWS profile/account that owns the
+# dare.dev Route53 zone. Do not commit terraform.tfvars if it ever contains
+# anything sensitive.
+
+aws_profile = "dare-dev"
