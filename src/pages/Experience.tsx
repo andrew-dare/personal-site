@@ -1,7 +1,13 @@
 import { competencies, education, experience } from '../data/resume'
+import { getRouteMeta } from '../data/seo'
+import { useSeo } from '../hooks/useSeo'
 import './Experience.css'
 
+const meta = getRouteMeta('/experience')
+
 export default function Experience() {
+  useSeo(meta.title, meta.description)
+
   return (
     <section className="experience">
       <h1 className="page-title">Experience</h1>

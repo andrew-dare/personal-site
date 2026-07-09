@@ -1,8 +1,14 @@
 import { Link } from 'react-router-dom'
 import { profile } from '../data/resume'
+import { getRouteMeta } from '../data/seo'
+import { useSeo } from '../hooks/useSeo'
 import './Home.css'
 
+const meta = getRouteMeta('/')
+
 export default function Home() {
+  useSeo(meta.title, meta.description)
+
   return (
     <section className="home">
       <p className="eyebrow">Hi, I'm</p>
