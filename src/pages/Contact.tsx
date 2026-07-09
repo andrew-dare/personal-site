@@ -1,7 +1,13 @@
 import { profile } from '../data/resume'
+import { getRouteMeta } from '../data/seo'
+import { useSeo } from '../hooks/useSeo'
 import './Contact.css'
 
+const meta = getRouteMeta('/contact')
+
 export default function Contact() {
+  useSeo(meta.title, meta.description)
+
   return (
     <section className="contact">
       <h1 className="page-title">Get in touch</h1>
