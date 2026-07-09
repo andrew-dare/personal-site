@@ -16,3 +16,10 @@
   — every deploy so far has failed with "Not authorized to perform
   sts:AssumeRoleWithWebIdentity" because the workflow's `environment: production`
   changes the OIDC subject claim and the trust policy didn't account for it.
+- Separate staging and control (production) deployments. Today there's a single
+  `deploy.yml` workflow and a single GitHub Environment named `production` that
+  actually deploys to the `stg-new.dare.dev` staging domain on every push to
+  `main` — there's no distinct pipeline/environment/promotion step for a real
+  production deploy yet. Needs its own Terraform (or workspace) targeting the
+  real domain, its own environment, and a deploy trigger that isn't just "push
+  to main" so staging and production don't deploy in lockstep.
