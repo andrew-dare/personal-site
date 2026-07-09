@@ -13,6 +13,22 @@ resource "aws_cloudfront_function" "index_rewrite" {
   comment = "Appends /index.html for extensionless paths so prerendered routes resolve without a trailing slash."
 }
 
+# This is a staging domain — keep it out of search results entirely. Drop
+# this policy (and its attachment below) once this Terraform is pointed at a
+# real production domain, so the live site isn't accidentally deindexed too.
+resource "aws_cloudfront_response_headers_policy" "noindex" {
+  name    = "${replace(var.site_domain, ".", "-")}-noindex"
+  comment = "Blocks search indexing on the ${var.site_domain} staging domain."
+
+  custom_headers_config {
+    items {
+      header   = "X-Robots-Tag"
+      value    = "noindex, nofollow, noarchive"
+      override = true
+    }
+  }
+}
+
 resource "aws_cloudfront_distribution" "site" {
   enabled             = true
   is_ipv6_enabled     = true
@@ -35,6 +51,8 @@ resource "aws_cloudfront_distribution" "site" {
 
     # Managed-CachingOptimized
     cache_policy_id = "658327ea-f89d-4fab-a63d-7e88639e58f6"
+
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.noindex.id
 
     function_association {
       event_type   = "viewer-request"
