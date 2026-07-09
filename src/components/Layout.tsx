@@ -29,7 +29,7 @@ export default function Layout() {
       <header className="site-header">
         <div className="site-header-inner">
           <NavLink to="/" className="brand" end>
-            andrew<span className="brand-accent">.</span>dare
+            dare<span className="brand-accent">.</span>dev
           </NavLink>
 
           <nav className="site-nav">
