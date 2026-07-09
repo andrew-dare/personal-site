@@ -33,3 +33,9 @@ variable "github_deploy_branch" {
   type        = string
   default     = "main"
 }
+
+variable "github_deploy_environment" {
+  description = "GitHub Actions environment name used by the deploy job (must match the `environment:` value in .github/workflows/deploy.yml)."
+  type        = string
+  default     = "production"
+}

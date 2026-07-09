@@ -29,10 +29,19 @@ data "aws_iam_policy_document" "github_deploy_trust" {
       values   = ["sts.amazonaws.com"]
     }
 
+    # The deploy workflow's job specifies `environment: production`, which
+    # changes GitHub's OIDC subject claim from the ref-based form to
+    # "repo:OWNER/REPO:environment:NAME" — trust policies that only match
+    # the ref-based subject reject the actual token with "Not authorized to
+    # perform sts:AssumeRoleWithWebIdentity". Allow both forms so this keeps
+    # working whether or not the job declares an environment.
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:ref:refs/heads/${var.github_deploy_branch}"]
+      values = [
+        "repo:${var.github_repo}:ref:refs/heads/${var.github_deploy_branch}",
+        "repo:${var.github_repo}:environment:${var.github_deploy_environment}",
+      ]
     }
   }
 }

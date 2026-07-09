@@ -12,3 +12,7 @@
   required reviewer on the `production` GitHub Environment, and add branch
   protection on `main` (require PRs, restrict direct pushes). Steps in
   `terraform/README.md` under "Restricting who can deploy".
+- Run `terraform apply` to pick up the OIDC trust policy fix (`terraform/iam-github-oidc.tf`)
+  — every deploy so far has failed with "Not authorized to perform
+  sts:AssumeRoleWithWebIdentity" because the workflow's `environment: production`
+  changes the OIDC subject claim and the trust policy didn't account for it.
