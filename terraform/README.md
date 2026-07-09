@@ -5,10 +5,8 @@ Provisions `stg-new.dare.dev`: a private S3 bucket served through CloudFront
 alias record, and a GitHub Actions OIDC deploy role — no long-lived AWS keys
 in CI.
 
-This has been written and `terraform validate`-checked but **not applied**.
-`terraform plan` confirms the config is otherwise correct; it currently fails
-at the Route53 zone lookup because the AWS profile used to write this doesn't
-own the `dare.dev` zone. Point it at the right account before applying.
+Applied and live under the `dare-dev` AWS profile. State is local
+(`terraform.tfstate`, gitignored) — see [State](#state) below.
 
 ## One-time setup
 
@@ -54,6 +52,29 @@ Terraform outputs:
 
 Once those are set, pushes to `main` (including PR merges) will build and
 deploy automatically via `.github/workflows/deploy.yml`.
+
+## Restricting who can deploy
+
+Today only `andrew-dare` has write access to the repo and there's no branch
+protection on `main`, so nobody else can trigger `.github/workflows/deploy.yml`
+— it only runs on push to `main`, and pushing/merging there requires write
+access. The OIDC trust policy in `iam-github-oidc.tf` also scopes the deploy
+role to `repo:andrew-dare/personal-site:ref:refs/heads/main` specifically, so
+no other repo, fork, or branch can assume it regardless of GitHub-side
+permissions.
+
+If a collaborator, bot, or automation is ever added, harden this further
+(these are access-control changes on the GitHub repo itself, so do them
+directly rather than scripted):
+
+1. **Require manual approval on every deploy** — Settings → Environments →
+   `production` → enable **Required reviewers** → add yourself. The workflow
+   already declares `environment: name: production`; this makes every run
+   pause until you personally approve it, independent of who or what pushed
+   to `main`.
+2. **Lock down `main`** — Settings → Branches → Add branch protection rule
+   for `main` → enable **Require a pull request before merging** and
+   **Restrict who can push to matching branches** (limit to yourself).
 
 ## State
 
