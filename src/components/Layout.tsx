@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import ThemeToggle from './ThemeToggle'
 import './Layout.css'
 
@@ -9,6 +10,20 @@ const links = [
 ]
 
 export default function Layout() {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const location = useLocation()
+
+  useEffect(() => {
+    setMenuOpen(false)
+  }, [location.pathname])
+
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : ''
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [menuOpen])
+
   return (
     <>
       <header className="site-header">
@@ -16,24 +31,58 @@ export default function Layout() {
           <NavLink to="/" className="brand" end>
             andrew<span className="brand-accent">.</span>dare
           </NavLink>
-          <div className="site-nav-group">
-            <nav className="site-nav">
-              {links.map((link) => (
-                <NavLink
-                  key={link.to}
-                  to={link.to}
-                  end={link.end}
-                  className={({ isActive }) =>
-                    isActive ? 'nav-link nav-link-active' : 'nav-link'
-                  }
-                >
-                  {link.label}
-                </NavLink>
-              ))}
-            </nav>
+
+          <nav className="site-nav">
+            {links.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                end={link.end}
+                className={({ isActive }) =>
+                  isActive ? 'nav-link nav-link-active' : 'nav-link'
+                }
+              >
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
+
+          <div className="site-header-actions">
             <ThemeToggle />
+            <button
+              type="button"
+              className="menu-toggle"
+              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={menuOpen}
+              aria-controls="mobile-nav"
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              <span className={menuOpen ? 'menu-icon menu-icon-open' : 'menu-icon'}>
+                <span />
+                <span />
+                <span />
+              </span>
+            </button>
           </div>
         </div>
+
+        <nav
+          id="mobile-nav"
+          className={menuOpen ? 'mobile-nav mobile-nav-open' : 'mobile-nav'}
+        >
+          {links.map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              end={link.end}
+              className={({ isActive }) =>
+                isActive ? 'mobile-nav-link mobile-nav-link-active' : 'mobile-nav-link'
+              }
+            >
+              {link.label}
+            </NavLink>
+          ))}
+        </nav>
       </header>
       <main className="site-main">
         <Outlet />
