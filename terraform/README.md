@@ -12,9 +12,19 @@ own the `dare.dev` zone. Point it at the right account before applying.
 
 ## One-time setup
 
-1. Copy `terraform.tfvars.example` to `terraform.tfvars` and set `aws_profile`
-   to the AWS CLI profile for the account that owns the `dare.dev` Route53
-   zone.
+1. Point Terraform at the AWS profile for the account that owns the
+   `dare.dev` Route53 zone. Either:
+   - copy `terraform.tfvars.example` to `terraform.tfvars` and set
+     `aws_profile`, or
+   - export it as an environment variable instead of using a tfvars file:
+     ```
+     export TF_VAR_aws_profile=<profile-name>
+     ```
+   Terraform itself takes no other required variables — `site_domain`,
+   `root_domain`, `github_repo`, and `github_deploy_branch` all have sensible
+   defaults in `variables.tf` and only need overriding if any of those change.
+   Actual AWS auth comes from that profile's entry in `~/.aws/credentials` —
+   no `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` env vars needed locally.
 2. If that account already has a GitHub Actions OIDC provider
    (`token.actions.githubusercontent.com`), remove the
    `aws_iam_openid_connect_provider.github` resource from

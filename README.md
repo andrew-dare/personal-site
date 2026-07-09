@@ -1,32 +1,69 @@
-# React + TypeScript + Vite
+# dare.dev
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Personal site — Vite + React + TypeScript + React Router, prerendered to
+static HTML per route for SEO, hosted on S3/CloudFront.
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```
+yarn install
+yarn dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Build
+
+```
+yarn build
+```
+
+Runs `tsc`, the client build, an SSR build, then prerenders each route to
+static HTML (see `scripts/prerender.mjs`). Output lands in `dist/`, ready to
+upload as-is to a static host.
+
+## Deployment
+
+The site deploys to `stg-new.dare.dev` on S3/CloudFront, provisioned by
+Terraform, with GitHub Actions handling the actual deploys.
+
+### Terraform setup
+
+Full details in [`terraform/README.md`](terraform/README.md). The short
+version — Terraform needs to know which AWS profile owns the `dare.dev`
+Route53 zone:
+
+```
+export TF_VAR_aws_profile=<profile-name>
+```
+
+(or copy `terraform/terraform.tfvars.example` to `terraform/terraform.tfvars`
+and set `aws_profile` there instead). No other variables are required —
+everything else in `terraform/variables.tf` has a working default. AWS auth
+itself comes from that profile in `~/.aws/credentials`, not from
+`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` env vars.
+
+```
+cd terraform
+terraform init
+terraform plan
+terraform apply
+```
+
+### Required GitHub Actions variables (for CD)
+
+`.github/workflows/deploy.yml` deploys automatically on every push to `main`
+(including PR merges). It needs these set as repository **variables**
+(Settings → Secrets and variables → Actions → Variables on
+`andrew-dare/personal-site`), populated from the Terraform outputs after
+`terraform apply`:
+
+| Variable                    | Source                                        |
+| ---------------------------- | ---------------------------------------------- |
+| `AWS_DEPLOY_ROLE_ARN`        | `terraform output github_deploy_role_arn`       |
+| `AWS_REGION`                 | `var.aws_region` (default `us-east-1`)          |
+| `S3_BUCKET_NAME`              | `terraform output s3_bucket_name`               |
+| `CLOUDFRONT_DISTRIBUTION_ID`  | `terraform output cloudfront_distribution_id`   |
+| `SITE_URL`                    | `terraform output site_url`                     |
+
+No AWS secrets are stored in GitHub — the workflow authenticates via OIDC,
+assuming the `AWS_DEPLOY_ROLE_ARN` role, which Terraform scopes to this
+repo's `main` branch only.
