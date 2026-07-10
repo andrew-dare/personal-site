@@ -23,3 +23,4 @@
   production deploy yet. Needs its own Terraform (or workspace) targeting the
   real domain, its own environment, and a deploy trigger that isn't just "push
   to main" so staging and production don't deploy in lockstep.
+- Update favicon.
