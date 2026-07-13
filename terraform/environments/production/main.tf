@@ -6,15 +6,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
-    tls = {
-      source  = "hashicorp/tls"
-      version = "~> 4.0"
-    }
   }
 
-  # Local state to start. Once the target AWS account is confirmed, migrate to
-  # an S3 backend (create a state bucket + DynamoDB lock table, add a
-  # `backend "s3" {}` block here, then run `terraform init -migrate-state`).
+  # Local state to start. Consider migrating to an S3 backend so state isn't
+  # only on one machine — see ../../README.md.
 }
 
 provider "aws" {
@@ -23,8 +18,9 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Project   = "dare-dev-2026"
-      ManagedBy = "terraform"
+      Project     = "dare-dev-2026"
+      Environment = "production"
+      ManagedBy   = "terraform"
     }
   }
 }
@@ -38,8 +34,9 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Project   = "dare-dev-2026"
-      ManagedBy = "terraform"
+      Project     = "dare-dev-2026"
+      Environment = "production"
+      ManagedBy   = "terraform"
     }
   }
 }
