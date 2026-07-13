@@ -26,13 +26,17 @@
   token provided could not be validated." Now pinned to the root CA instead
   (`environments/staging/oidc.tf`), which is stable for decades. Needs
   `terraform apply` (see state migration item above) to take effect.
-- `environments/production` now targets the real domain (`dare.dev` +
-  `www.dare.dev`, previously `prod-new.dare.dev`) but needs re-applying —
-  it's no longer in sync with what's live. This is a real cutover with a
-  required manual prerequisite (removing the alias from the existing
-  CloudFront distribution before `apply` can succeed) — full sequencing in
-  `terraform/README.md` under "Cutting production over to the real domain".
-  Not attempted in this session.
+- Cutover to `environments/production` targeting `dare.dev` + `www.dare.dev`
+  is in progress (attempted, partially applied). The alias-removal
+  prerequisite was done correctly, but the apply itself failed partway with
+  `ResponseHeadersPolicyInUse` / `FunctionInUse` / `BucketNotEmpty` errors —
+  a real ordering bug in `modules/site`: the CloudFront Function needed
+  `create_before_destroy` (fixed) and the S3 bucket needed `force_destroy`
+  (fixed), so re-running `terraform apply` should now complete cleanly.
+  `terraform plan` after the fix shows a much smaller, correctly-ordered
+  diff (8 to add, 1 to change, 4 to destroy, including cleaning up one
+  deposed ACM certificate object left over from the failed run). Re-running
+  `apply` not attempted in this session.
 - After the cutover apply, update the `PROD_*` GitHub Actions repository
   variables (bucket name and IAM role ARN both change, since they're derived
   from the domain name) so `.github/workflows/deploy-production.yml`

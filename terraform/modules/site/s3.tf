@@ -1,5 +1,11 @@
 resource "aws_s3_bucket" "site" {
   bucket = local.bucket_name
+
+  # This bucket only ever holds build output the CD pipeline regenerates on
+  # every deploy — nothing irreplaceable. Without force_destroy, Terraform
+  # can't delete a non-empty bucket (BucketNotEmpty), which blocks exactly
+  # the kind of domain/bucket-name change this module is built to support.
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_public_access_block" "site" {

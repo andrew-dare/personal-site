@@ -11,6 +11,18 @@ resource "aws_cloudfront_function" "index_rewrite" {
   publish = true
   code    = file("${path.module}/cloudfront-function.js")
   comment = "Appends /index.html for extensionless paths so prerendered routes resolve without a trailing slash."
+
+  # When site_domain changes (e.g. a domain cutover), this function's name
+  # changes too, forcing replacement. Without create_before_destroy, Terraform
+  # destroys the old function first — but it's still attached to the
+  # distribution at that point (the distribution hasn't been updated to
+  # reference the new one yet), so AWS rejects the delete with
+  # "FunctionInUse". This ensures the new function exists (and the
+  # distribution can be updated to point at it) before the old one is torn
+  # down.
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # Preview/non-final domains should stay out of search results. Set
