@@ -5,8 +5,11 @@ export const profile = {
   phone: '760-840-0191',
   email: 'andrew@dare.dev',
   site: 'www.dare.dev',
-  summary:
-    "Full-stack software engineer with nearly a decade of experience shipping customer-facing billing, growth, and real-time features at Dropbox and Atlassian. Strong in TypeScript, Node.js, and React, and skilled at translating complex engineering problems into language technical and non-technical stakeholders can act on.",
+  summary: [
+    "Full-stack software engineer with nearly a decade of experience. I've built products at Dropbox and Atlassian, designed internal tooling for a Fortune 5 consumer electronics company, and developed marketing websites for startups and enterprises. I'm equally at home embedded on technical teams and bringing non-technical stakeholders' visions to life.",
+    "Currently building a few things from scratch (more on that soon!) and open to new opportunities, freelance or full-time. Let's connect and build together.",
+  ],
+
   social: {
     github: 'github.com/andrew-dare',
     linkedin: 'linkedin.com/in/andrewdare',
