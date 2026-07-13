@@ -10,12 +10,12 @@ module "site" {
 
   github_repo          = "andrew-dare/personal-site"
   github_deploy_branch = "main"
-  # No production deploy workflow exists yet. "production" is the correct
-  # semantic name, but staging's *current* deploy.yml job is (confusingly)
-  # also named "production" even though it deploys staging — see TODO.md.
-  # Rename staging's environment to "staging" before wiring up a real prod
-  # deploy job, or these two roles will both trust the same OIDC subject.
-  github_deploy_environment = "production"
+  # Deliberately not "production" — staging's deploy.yml job is (confusingly)
+  # also named "production" even though it deploys staging (see TODO.md), and
+  # reusing that name here would mean both stacks' IAM roles trust the same
+  # OIDC subject. "prod" keeps this stack's trust policy distinct without
+  # needing to coordinate a rename of staging's still-not-yet-reapplied setup.
+  github_deploy_environment = "prod"
 
   oidc_provider_arn = data.aws_iam_openid_connect_provider.github.arn
 

@@ -24,8 +24,8 @@ dist-ssr
 *.sw?
 
 # Terraform
-terraform/.terraform/
-terraform/*.tfstate
-terraform/*.tfstate.*
-terraform/terraform.tfvars
-terraform/*.tfplan
+terraform/**/.terraform/
+terraform/**/*.tfstate
+terraform/**/*.tfstate.*
+terraform/**/terraform.tfvars
+terraform/**/*.tfplan
