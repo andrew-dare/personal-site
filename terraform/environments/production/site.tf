@@ -5,8 +5,14 @@ module "site" {
     aws.us_east_1 = aws.us_east_1
   }
 
-  site_domain = "prod-new.dare.dev"
-  root_domain = "dare.dev"
+  site_domain    = "dare.dev"
+  domain_aliases = ["dare.dev", "www.dare.dev"]
+  root_domain    = "dare.dev"
+
+  # "dare.dev" as a bucket name is already taken — it's the pre-existing,
+  # non-Terraform-managed bucket behind the current live site. This bucket
+  # is new and unrelated to it.
+  bucket_name = "dare-dev-production-site"
 
   github_repo          = "andrew-dare/personal-site"
   github_deploy_branch = "main"
@@ -19,8 +25,6 @@ module "site" {
 
   oidc_provider_arn = data.aws_iam_openid_connect_provider.github.arn
 
-  # prod-new.dare.dev is still a preview subdomain, not the final public
-  # domain (e.g. www.dare.dev) — keep it out of search results until cutover.
-  # Remove when this points at the real domain (tracked in TODO.md).
-  noindex = true
+  # This is now the real, final public domain — searchable.
+  noindex = false
 }

@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "site" {
-  bucket = var.site_domain
+  bucket = local.bucket_name
 }
 
 resource "aws_s3_bucket_public_access_block" "site" {

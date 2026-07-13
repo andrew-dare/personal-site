@@ -2,12 +2,13 @@
 
 - Update SEO copy (per-route titles/descriptions in `src/data/seo.ts`) — current
   text is a placeholder pass, not tuned for actual search terms.
-- `stg-new.dare.dev` and `prod-new.dare.dev` are both deliberately blocked from
-  search indexing (`public/robots.txt` disallow-all + a CloudFront
-  `X-Robots-Tag: noindex` response header in `terraform/modules/site/cloudfront.tf`,
-  set via `noindex = true` in each stack's `site.tf`) — both are still preview
-  subdomains, not the final public domain. Remove `robots.txt` and flip
-  `noindex = false` once a stack points at the real, final domain.
+- `stg-new.dare.dev` is deliberately blocked from search indexing (a CloudFront
+  `X-Robots-Tag: noindex` response header, `noindex = true` in its `site.tf`)
+  since it's still a preview subdomain. `public/robots.txt`'s old blanket
+  disallow-all was removed since it applied to every environment identically
+  and would've incorrectly blocked the real production domain too — the
+  CloudFront header is now the only search-blocking mechanism, and it's
+  already environment-aware (`noindex = false` for production).
 - Restrict who can trigger deploys, in case a collaborator/bot is ever added
   (nobody else has access today, so this is precautionary): add yourself as a
   required reviewer on both the `production` (staging) and `prod` (production)
@@ -25,11 +26,23 @@
   token provided could not be validated." Now pinned to the root CA instead
   (`environments/staging/oidc.tf`), which is stable for decades. Needs
   `terraform apply` (see state migration item above) to take effect.
-- `environments/production` is applied and live (`terraform plan` shows "No
-  changes"). Still need to set the `PROD_*` GitHub Actions repository
-  variables listed in `terraform/README.md` (none are set yet — only
-  staging's unprefixed ones are) so `.github/workflows/deploy-production.yml`
-  (manual, `workflow_dispatch`) can actually deploy it.
+- `environments/production` now targets the real domain (`dare.dev` +
+  `www.dare.dev`, previously `prod-new.dare.dev`) but needs re-applying —
+  it's no longer in sync with what's live. This is a real cutover with a
+  required manual prerequisite (removing the alias from the existing
+  CloudFront distribution before `apply` can succeed) — full sequencing in
+  `terraform/README.md` under "Cutting production over to the real domain".
+  Not attempted in this session.
+- After the cutover apply, update the `PROD_*` GitHub Actions repository
+  variables (bucket name and IAM role ARN both change, since they're derived
+  from the domain name) so `.github/workflows/deploy-production.yml`
+  (manual, `workflow_dispatch`) can actually deploy it. None are set yet.
+- The old `dare.dev`/`www.dare.dev` CloudFront distribution (`E2RT0VQHJ1X6SV`)
+  and its S3 website bucket are being left alone for now, per an explicit
+  decision — DNS will simply stop pointing at them once the cutover above
+  happens, leaving them orphaned but harmless (small ongoing cost).
+  Decommission them as a separate, deliberate step once the new site is
+  confirmed working.
 - Staging's `deploy.yml` job is named `environment: production` even though it
   deploys the *staging* domain — a leftover from before the staging/production
   split. The new production workflow avoids colliding with it by using a
