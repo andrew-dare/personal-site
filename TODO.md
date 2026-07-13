@@ -27,16 +27,28 @@
   (`environments/staging/oidc.tf`), which is stable for decades. Needs
   `terraform apply` (see state migration item above) to take effect.
 - Cutover to `environments/production` targeting `dare.dev` + `www.dare.dev`
-  is in progress (attempted, partially applied). The alias-removal
-  prerequisite was done correctly, but the apply itself failed partway with
-  `ResponseHeadersPolicyInUse` / `FunctionInUse` / `BucketNotEmpty` errors —
-  a real ordering bug in `modules/site`: the CloudFront Function needed
-  `create_before_destroy` (fixed) and the S3 bucket needed `force_destroy`
-  (fixed), so re-running `terraform apply` should now complete cleanly.
-  `terraform plan` after the fix shows a much smaller, correctly-ordered
-  diff (8 to add, 1 to change, 4 to destroy, including cleaning up one
-  deposed ACM certificate object left over from the failed run). Re-running
-  `apply` not attempted in this session.
+  is in progress (attempted twice, partially applied both times). The
+  alias-removal prerequisite was done correctly both times — every failure
+  has been a real bug in `modules/site`, not something done wrong:
+  - Attempt 1: `FunctionInUse` / `ResponseHeadersPolicyInUse` /
+    `BucketNotEmpty`. Fixed the CloudFront Function
+    (`create_before_destroy`) and added `force_destroy` to the S3 bucket.
+  - Attempt 2 (after that fix): `ResponseHeadersPolicyInUse` /
+    `BucketNotEmpty` again. The response headers policy is now always
+    created (not conditional on `noindex`) and only conditionally attached,
+    with a `moved` block to rename the existing instance in place instead
+    of destroying and recreating it — confirmed via `terraform plan`
+    against live state that this is now a pure in-place rename (`id`
+    unchanged), no destroy involved at all.
+  - `force_destroy` still didn't empty the old `prod-new.dare.dev` bucket:
+    confirmed via `terraform state show` that this bucket's state still has
+    `force_destroy = false` recorded from before the fix, and a replace
+    destroys the old instance using its last-applied config, not the new
+    one — `force_destroy` only takes effect for buckets created with it
+    from the start. This one bucket needs manually emptying first
+    (`aws s3 rm s3://prod-new.dare.dev --recursive`) before the next
+    `apply`; not done in this session.
+  - Re-running `apply` after these fixes not attempted in this session.
 - After the cutover apply, update the `PROD_*` GitHub Actions repository
   variables (bucket name and IAM role ARN both change, since they're derived
   from the domain name) so `.github/workflows/deploy-production.yml`
