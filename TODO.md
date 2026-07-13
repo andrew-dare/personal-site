@@ -38,3 +38,10 @@
   production stack: rename staging's environment (in both `deploy.yml` and
   `environments/staging/site.tf`) to `"staging"`, reapply staging, then rename
   production's from `"prod"` to `"production"` and reapply. Not required.
+- Set up Cloudflare Web Analytics to actually get traffic data: create the
+  site(s) in the Cloudflare dashboard (Analytics & Logs → Web Analytics —
+  doesn't require DNS to be on Cloudflare) and set the resulting token(s) as
+  `CF_BEACON_TOKEN` / `PROD_CF_BEACON_TOKEN` GitHub Actions variables. The
+  code side is done (`src/analytics.ts`, wired into both deploy workflows) —
+  this is the one manual step left, since it needs a Cloudflare account.
+  Details in `terraform/README.md` under "Analytics".

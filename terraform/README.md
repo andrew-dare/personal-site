@@ -135,6 +135,7 @@ so the two can't be confused or accidentally left pointing at each other:
 | `S3_BUCKET_NAME`              | `terraform output s3_bucket_name`                 |
 | `CLOUDFRONT_DISTRIBUTION_ID`  | `terraform output cloudfront_distribution_id`     |
 | `SITE_URL`                    | `terraform output site_url`                       |
+| `CF_BEACON_TOKEN`             | *(optional)* Cloudflare Web Analytics site token — see "Analytics" below |
 
 **Production** — from `environments/production`:
 
@@ -145,6 +146,29 @@ so the two can't be confused or accidentally left pointing at each other:
 | `PROD_S3_BUCKET_NAME`              | `terraform output s3_bucket_name`                 |
 | `PROD_CLOUDFRONT_DISTRIBUTION_ID`  | `terraform output cloudfront_distribution_id`     |
 | `PROD_SITE_URL`                    | `terraform output site_url`                       |
+| `PROD_CF_BEACON_TOKEN`             | *(optional)* Cloudflare Web Analytics site token — see "Analytics" below |
+
+## Analytics
+
+The site loads [Cloudflare Web Analytics](https://www.cloudflare.com/web-analytics/)
+(`src/analytics.ts`) — cookieless, no consent banner needed, single script
+tag. It's entirely opt-in per environment: with no token set, Vite dead-code
+eliminates the loader entirely at build time (nothing added to the bundle,
+nothing requested at runtime).
+
+To enable it for an environment:
+
+1. In the Cloudflare dashboard, add the site under Analytics & Logs → Web
+   Analytics (this doesn't require the domain's DNS to be on Cloudflare —
+   Web Analytics works via the JS snippet alone) and copy its token.
+2. Set it as `CF_BEACON_TOKEN` (staging) or `PROD_CF_BEACON_TOKEN`
+   (production) in GitHub Actions repository variables.
+3. Redeploy — the token is baked in at build time (`VITE_CF_BEACON_TOKEN`,
+   passed by each workflow's Build step).
+
+Nothing requires the same token (or any token at all) for both
+environments — e.g. you might only want production tracked, so staging/dev
+traffic doesn't muddy real numbers.
 
 ## Deploying to production
 
