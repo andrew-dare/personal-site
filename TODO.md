@@ -25,11 +25,11 @@
   token provided could not be validated." Now pinned to the root CA instead
   (`environments/staging/oidc.tf`), which is stable for decades. Needs
   `terraform apply` (see state migration item above) to take effect.
-- Apply `environments/production` (targets `prod-new.dare.dev`, written and
-  `terraform plan`-verified clean — 14 resources to create, 0 destroys — but not
-  yet applied), then set the `PROD_*` GitHub Actions variables listed in
-  `terraform/README.md` so `.github/workflows/deploy-production.yml` (manual,
-  `workflow_dispatch`) can actually deploy it.
+- `environments/production` is applied and live (`terraform plan` shows "No
+  changes"). Still need to set the `PROD_*` GitHub Actions repository
+  variables listed in `terraform/README.md` (none are set yet — only
+  staging's unprefixed ones are) so `.github/workflows/deploy-production.yml`
+  (manual, `workflow_dispatch`) can actually deploy it.
 - Staging's `deploy.yml` job is named `environment: production` even though it
   deploys the *staging* domain — a leftover from before the staging/production
   split. The new production workflow avoids colliding with it by using a
