@@ -1,18 +1,3 @@
-data "tls_certificate" "github" {
-  url = "https://token.actions.githubusercontent.com"
-}
-
-# If a GitHub Actions OIDC provider already exists in the target AWS account
-# (only one is allowed per account, since the URL must be unique), delete this
-# resource and instead `terraform import` the existing one:
-#   terraform import aws_iam_openid_connect_provider.github \
-#     arn:aws:iam::<account-id>:oidc-provider/token.actions.githubusercontent.com
-resource "aws_iam_openid_connect_provider" "github" {
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [data.tls_certificate.github.certificates[0].sha1_fingerprint]
-}
-
 data "aws_iam_policy_document" "github_deploy_trust" {
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
@@ -20,7 +5,7 @@ data "aws_iam_policy_document" "github_deploy_trust" {
 
     principals {
       type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.github.arn]
+      identifiers = [var.oidc_provider_arn]
     }
 
     condition {
@@ -29,12 +14,11 @@ data "aws_iam_policy_document" "github_deploy_trust" {
       values   = ["sts.amazonaws.com"]
     }
 
-    # The deploy workflow's job specifies `environment: production`, which
-    # changes GitHub's OIDC subject claim from the ref-based form to
-    # "repo:OWNER/REPO:environment:NAME" — trust policies that only match
-    # the ref-based subject reject the actual token with "Not authorized to
-    # perform sts:AssumeRoleWithWebIdentity". Allow both forms so this keeps
-    # working whether or not the job declares an environment.
+    # A job that specifies `environment: NAME` gets an OIDC subject claim of
+    # "repo:OWNER/REPO:environment:NAME" instead of the ref-based
+    # "repo:OWNER/REPO:ref:refs/heads/BRANCH" — trust policies that only
+    # match one form reject the token from a job using the other. Allow both
+    # so this keeps working regardless of how the deploy job is set up.
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
