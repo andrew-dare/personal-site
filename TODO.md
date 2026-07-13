@@ -38,4 +38,3 @@
   production stack: rename staging's environment (in both `deploy.yml` and
   `environments/staging/site.tf`) to `"staging"`, reapply staging, then rename
   production's from `"prod"` to `"production"` and reapply. Not required.
-- Update favicon.
