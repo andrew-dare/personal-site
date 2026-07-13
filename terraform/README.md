@@ -25,16 +25,21 @@ final domain. Tracked in `TODO.md`.
 From `environments/staging/` or `environments/production/`:
 
 1. Point Terraform at the AWS profile for the account that owns the
-   `dare.dev` Route53 zone. Either:
+   `dare.dev` Route53 zone. `aws_profile` has no default and is required —
+   Terraform will refuse to run without it, rather than silently falling
+   back to whatever your ambient default AWS credentials happen to be (which
+   previously caused a confusing "OIDC Provider ... not found" error against
+   a completely unrelated AWS account). Either:
    - copy `terraform.tfvars.example` to `terraform.tfvars` and set
      `aws_profile`, or
    - export it as an environment variable instead:
      ```
      export TF_VAR_aws_profile=<profile-name>
      ```
-   No other variables are required — `aws_region` and `aws_profile` are the
-   only ones exposed at this level; everything else (domain, GitHub repo,
-   noindex, etc.) is set explicitly in that stack's `site.tf`.
+   No other variables are required — `aws_region` (optional, defaults to
+   `us-east-1`) and `aws_profile` are the only ones exposed at this level;
+   everything else (domain, GitHub repo, noindex, etc.) is set explicitly in
+   that stack's `site.tf`.
 2. `terraform init`
 3. `terraform plan` — review before applying anything.
 4. `terraform apply`

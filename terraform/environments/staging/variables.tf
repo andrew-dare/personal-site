@@ -7,5 +7,8 @@ variable "aws_region" {
 variable "aws_profile" {
   description = "AWS CLI profile pointing at the account that owns the dare.dev Route53 zone."
   type        = string
-  default     = null
+  # No default — without one, Terraform silently falls back to whatever your
+  # ambient default AWS credentials are, which previously caused a confusing
+  # "OIDC Provider ... not found" error against a completely unrelated AWS
+  # account instead of a clear "no value for required variable" one.
 }
