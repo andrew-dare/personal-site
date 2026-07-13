@@ -115,9 +115,13 @@ gitignored so this doesn't touch the repo, just the leftover local files.
 
 ## After applying
 
-Each stack has its own outputs. Set these as GitHub Actions repository
+Each stack has its own outputs and its own set of GitHub Actions repository
 **variables** (Settings → Secrets and variables → Actions → Variables) on
-`andrew-dare/personal-site`:
+`andrew-dare/personal-site`. Staging's are unprefixed (`.github/workflows/deploy.yml`);
+production's are `PROD_`-prefixed (`.github/workflows/deploy-production.yml`)
+so the two can't be confused or accidentally left pointing at each other:
+
+**Staging** — from `environments/staging`:
 
 | Variable                     | Value                                           |
 | ----------------------------- | ------------------------------------------------ |
@@ -127,37 +131,53 @@ Each stack has its own outputs. Set these as GitHub Actions repository
 | `CLOUDFRONT_DISTRIBUTION_ID`  | `terraform output cloudfront_distribution_id`     |
 | `SITE_URL`                    | `terraform output site_url`                       |
 
-`.github/workflows/deploy.yml` currently only deploys staging (on every push
-to `main`) — there's no production deploy workflow yet. See the "staging and
-production deployments" item in `TODO.md`.
+**Production** — from `environments/production`:
 
-**Naming heads-up for whoever builds the production deploy workflow:**
-`deploy.yml`'s job currently declares `environment: production` even though
-it deploys *staging* — a leftover from before this split. Both stacks'
-`github_deploy_environment` is set to `"production"` today, so a new
-production workflow using that same environment name would technically be
-trusted by *both* IAM roles. Rename staging's GitHub Environment (and
-`environments/staging/site.tf`'s `github_deploy_environment`) to `"staging"`
-before wiring up real production deploys, so the two stay distinct.
+| Variable                          | Value                                           |
+| ----------------------------------- | ------------------------------------------------ |
+| `PROD_AWS_DEPLOY_ROLE_ARN`         | `terraform output github_deploy_role_arn`         |
+| `PROD_AWS_REGION`                  | value of `var.aws_region` (default `us-east-1`)   |
+| `PROD_S3_BUCKET_NAME`              | `terraform output s3_bucket_name`                 |
+| `PROD_CLOUDFRONT_DISTRIBUTION_ID`  | `terraform output cloudfront_distribution_id`     |
+| `PROD_SITE_URL`                    | `terraform output site_url`                       |
+
+## Deploying to production
+
+`.github/workflows/deploy-production.yml` is **manual only**
+(`workflow_dispatch`) — it never runs on push, so merging to `main` never
+touches production by itself. Run it from the repo's Actions tab (or
+`gh workflow run deploy-production.yml`) once `environments/production` is
+applied and the `PROD_*` variables above are set.
+
+The job declares `environment: name: prod` — deliberately distinct from
+staging's `environment: name: production` (itself a leftover from before the
+staging/production split, since that job actually deploys the *staging*
+domain). Reusing the same name would mean both stacks' IAM roles trust the
+same OIDC subject, so anyone who could edit either workflow file could point
+it at the other stack's AWS resources without IAM noticing. Once staging's
+naming gets cleaned up (see `TODO.md`), consider renaming `prod` back to
+`production` for clarity — not required, `prod` works fine as a permanent
+name too.
 
 ## Restricting who can deploy
 
 Today only `andrew-dare` has write access to the repo and there's no branch
-protection on `main`, so nobody else can trigger `.github/workflows/deploy.yml`
-— it only runs on push to `main`, and pushing/merging there requires write
-access. Each stack's OIDC trust policy also scopes its deploy role to
-`repo:andrew-dare/personal-site`, so no other repo or fork can assume it
-regardless of GitHub-side permissions.
+protection on `main`, so nobody else can trigger either workflow: staging
+only runs on push to `main`, production only runs when someone manually
+dispatches it — both require write access either way. Each stack's OIDC
+trust policy also scopes its deploy role to `repo:andrew-dare/personal-site`,
+so no other repo or fork can assume it regardless of GitHub-side permissions.
 
 If a collaborator, bot, or automation is ever added, harden this further
 (these are access-control changes on the GitHub repo itself, so do them
 directly rather than scripted):
 
 1. **Require manual approval on every deploy** — Settings → Environments →
-   `production` → enable **Required reviewers** → add yourself. The workflow
-   already declares `environment: name: production`; this makes every run
-   pause until you personally approve it, independent of who or what pushed
-   to `main`.
+   `production` (staging) and `prod` (production) → enable **Required
+   reviewers** on each → add yourself. This makes every run pause until you
+   personally approve it, independent of who or what triggered it —
+   redundant with production already being manual-dispatch-only, but useful
+   if staging's automatic push-to-deploy trigger ever feels too loose.
 2. **Lock down `main`** — Settings → Branches → Add branch protection rule
    for `main` → enable **Require a pull request before merging** and
    **Restrict who can push to matching branches** (limit to yourself).
