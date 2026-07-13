@@ -108,7 +108,7 @@ terraform state mv -state=../../terraform.tfstate -state-out=terraform.tfstate \
 terraform state mv -state=../../terraform.tfstate -state-out=terraform.tfstate \
   'aws_cloudfront_function.index_rewrite' 'module.site.aws_cloudfront_function.index_rewrite'
 terraform state mv -state=../../terraform.tfstate -state-out=terraform.tfstate \
-  'aws_cloudfront_response_headers_policy.noindex' 'module.site.aws_cloudfront_response_headers_policy.noindex[0]'
+  'aws_cloudfront_response_headers_policy.noindex' 'module.site.aws_cloudfront_response_headers_policy.noindex'
 terraform state mv -state=../../terraform.tfstate -state-out=terraform.tfstate \
   'aws_cloudfront_distribution.site' 'module.site.aws_cloudfront_distribution.site'
 
@@ -149,7 +149,14 @@ is done first:
    the distribution or its S3 bucket — it only frees up the two domain names
    so a different distribution can claim them. Everything else about the
    old setup stays exactly as it is.
-2. `terraform apply` in `environments/production`. This will:
+2. Empty the old bucket before applying:
+   `aws s3 rm s3://prod-new.dare.dev --recursive`. The module sets
+   `force_destroy = true` on the S3 bucket, but that only takes effect for
+   buckets *created* with it — this bucket already existed beforehand, so
+   Terraform destroys it using its last-applied config (`force_destroy =
+   false`), not the new one. Confirm with `terraform state show
+   'module.site.aws_s3_bucket.site' | grep force_destroy` if in doubt.
+3. `terraform apply` in `environments/production`. This will:
    - Destroy the old `prod-new.dare.dev`-named resources (bucket, ACM cert,
      CloudFront function, IAM role — all uniquely named after the domain)
      and create equivalents for `dare.dev`
@@ -158,7 +165,11 @@ is done first:
      handles this — they already exist, pointing at the old distribution,
      and Terraform will overwrite them to point at the new one)
    - Request and DNS-validate a new ACM certificate covering both domains
-3. Update the `PROD_*` GitHub Actions variables (see "After applying" below)
+   - Rename the response headers policy in place rather than recreating it
+     (a `moved` block handles this) — it's always created regardless of
+     `noindex`, and only conditionally attached to the distribution, so
+     flipping `noindex` never requires destroying and recreating it
+4. Update the `PROD_*` GitHub Actions variables (see "After applying" below)
    — the bucket name and IAM role ARN both changed since they're derived
    from the domain name, which changed.
 
