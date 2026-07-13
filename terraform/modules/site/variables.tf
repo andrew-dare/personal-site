@@ -1,6 +1,18 @@
 variable "site_domain" {
-  description = "Full domain this environment is served from."
+  description = "Primary domain this environment is served from — used for the ACM certificate's common name, tags, and default bucket name."
   type        = string
+}
+
+variable "domain_aliases" {
+  description = "All domains this distribution should respond to (CloudFront aliases + ACM subject alternative names + a Route53 record per domain). Defaults to just [site_domain]."
+  type        = list(string)
+  default     = null
+}
+
+variable "bucket_name" {
+  description = "S3 bucket name. Defaults to site_domain — override when that exact name is already taken globally (e.g. by pre-existing infrastructure for the same domain)."
+  type        = string
+  default     = null
 }
 
 variable "root_domain" {

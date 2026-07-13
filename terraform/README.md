@@ -7,18 +7,30 @@ Actions OIDC deploy role (no long-lived AWS keys in CI) — for a different
 domain:
 
 - `environments/staging` → `stg-new.dare.dev` (applied and live)
-- `environments/production` → `prod-new.dare.dev` (written, not yet applied)
+- `environments/production` → `dare.dev` + `www.dare.dev`, the real public
+  domain (written, not yet applied — see "Cutting production over to the
+  real domain" below; it previously pointed at the preview subdomain
+  `prod-new.dare.dev`)
 
-Both share resource definitions via `modules/site`. The GitHub Actions OIDC
-provider is account-wide (AWS allows only one per URL), so `staging` owns
-creating it and `production` looks it up via a data source — see
-`environments/*/oidc.tf`.
+Both share resource definitions via `modules/site`, which supports serving
+multiple domains off one distribution: `site_domain` is the primary domain
+(ACM cert CN, tags), `domain_aliases` is the full list of domains the
+distribution should answer to (defaults to just `[site_domain]`), and
+`bucket_name` lets the S3 bucket use a name independent of the domain, for
+cases like this one where the domain name itself is already taken as a
+bucket name by pre-existing infrastructure. The GitHub Actions OIDC provider
+is account-wide (AWS allows only one per URL), so `staging` owns creating it
+and `production` looks it up via a data source — see `environments/*/oidc.tf`.
 
-Both `prod-new.dare.dev` and `stg-new.dare.dev` are still preview subdomains,
-not the final public domain, so both are deliberately blocked from search
-indexing (`noindex = true` in each stack's `site.tf`). Remove that — and
-`public/robots.txt` at the repo root — once a stack points at the real,
-final domain. Tracked in `TODO.md`.
+`stg-new.dare.dev` is still a preview subdomain, not the final public
+domain, so it's deliberately blocked from search indexing (`noindex = true`
+in its `site.tf`) via a CloudFront response header. `environments/production`
+now points at the real domain, so its `noindex` is `false`. Search-blocking
+used to also rely on a blanket `public/robots.txt` (`Disallow: /`) — that's
+been removed, since it applied identically to every environment and would
+now incorrectly block the real production domain too; the per-stack
+CloudFront header is the only search-blocking mechanism now, and it's
+already environment-aware.
 
 ## One-time setup (either stack)
 
@@ -117,6 +129,45 @@ applying anything — don't just apply to "fix" an unexpected diff.
 Once confirmed clean, delete the old root-level `terraform.tfstate`,
 `terraform.tfstate.backup`, `terraform.tfvars`, and `.terraform/` — they're
 gitignored so this doesn't touch the repo, just the leftover local files.
+
+## Cutting production over to the real domain
+
+`environments/production` moved from `prod-new.dare.dev` to `dare.dev` +
+`www.dare.dev` — the domain that's already live today, served by a
+pre-existing CloudFront distribution and S3 website bucket that this
+Terraform has never managed. That existing setup is being left alone
+deliberately (per an explicit decision — see `TODO.md`), which creates one
+hard constraint: **CloudFront will not let a new distribution claim an alias
+that's still active on another distribution in the same account.**
+`terraform plan` can't detect this ahead of time (it's an apply-time API
+call), so `terraform apply` will fail outright on the alias step unless this
+is done first:
+
+1. In the CloudFront console (or via CLI), edit the existing distribution
+   (currently `E2RT0VQHJ1X6SV`) and remove `dare.dev` and `www.dare.dev` from
+   its **Alternate domain names (CNAMEs)**. This does not delete or disable
+   the distribution or its S3 bucket — it only frees up the two domain names
+   so a different distribution can claim them. Everything else about the
+   old setup stays exactly as it is.
+2. `terraform apply` in `environments/production`. This will:
+   - Destroy the old `prod-new.dare.dev`-named resources (bucket, ACM cert,
+     CloudFront function, IAM role — all uniquely named after the domain)
+     and create equivalents for `dare.dev`
+   - Take over the existing Route53 A records for `dare.dev` and
+     `www.dare.dev` (`allow_overwrite = true` in `modules/site/route53.tf`
+     handles this — they already exist, pointing at the old distribution,
+     and Terraform will overwrite them to point at the new one)
+   - Request and DNS-validate a new ACM certificate covering both domains
+3. Update the `PROD_*` GitHub Actions variables (see "After applying" below)
+   — the bucket name and IAM role ARN both changed since they're derived
+   from the domain name, which changed.
+
+**Left untouched by any of this:** the zone's MX and TXT records (Google
+Workspace email, SPF, site verification) — this Terraform only ever manages
+a single A record per domain in `domain_aliases`, nothing broader. The old
+CloudFront distribution and its S3 bucket also stay fully intact, just no
+longer reachable via DNS — decommissioning them is a deliberate, separate
+step for later (tracked in `TODO.md`), not part of this change.
 
 ## After applying
 
