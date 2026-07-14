@@ -69,6 +69,11 @@ terraform import aws_iam_openid_connect_provider.github \
 
 ## Migrating staging's existing state
 
+**Done** — kept here for reference, since the same pattern applies any time
+a resource's addressing changes (e.g. the `moved` block story in
+`modules/site/cloudfront.tf`) and someone needs to see how a prior one was
+handled.
+
 Staging was originally a single flat config directly in `terraform/` before
 it was split into `modules/site` + `environments/staging`. The live state
 (`terraform.tfstate` at the `terraform/` root, gitignored) still uses the old
@@ -240,15 +245,11 @@ touches production by itself. Run it from the repo's Actions tab (or
 `gh workflow run deploy-production.yml`) once `environments/production` is
 applied and the `PROD_*` variables above are set.
 
-The job declares `environment: name: prod` — deliberately distinct from
-staging's `environment: name: production` (itself a leftover from before the
-staging/production split, since that job actually deploys the *staging*
-domain). Reusing the same name would mean both stacks' IAM roles trust the
-same OIDC subject, so anyone who could edit either workflow file could point
-it at the other stack's AWS resources without IAM noticing. Once staging's
-naming gets cleaned up (see `TODO.md`), consider renaming `prod` back to
-`production` for clarity — not required, `prod` works fine as a permanent
-name too.
+The job declares `environment: name: production`, and staging's job
+declares `environment: name: staging` — kept distinct on purpose. Reusing
+the same name for both would mean both stacks' IAM roles trust the same
+OIDC subject, so anyone who could edit either workflow file could point it
+at the other stack's AWS resources without IAM noticing.
 
 ## Restricting who can deploy
 
@@ -264,8 +265,8 @@ If a collaborator, bot, or automation is ever added, harden this further
 directly rather than scripted):
 
 1. **Require manual approval on every deploy** — Settings → Environments →
-   `production` (staging) and `prod` (production) → enable **Required
-   reviewers** on each → add yourself. This makes every run pause until you
+   `staging` and `production` → enable **Required reviewers** on each →
+   add yourself. This makes every run pause until you
    personally approve it, independent of who or what triggered it —
    redundant with production already being manual-dispatch-only, but useful
    if staging's automatic push-to-deploy trigger ever feels too loose.

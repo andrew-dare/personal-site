@@ -10,10 +10,8 @@ module "site" {
 
   github_repo          = "andrew-dare/personal-site"
   github_deploy_branch = "main"
-  # Matches the `environment:` value in .github/workflows/deploy.yml. Note
-  # this is misleadingly named "production" today even though it deploys
-  # staging — see TODO.md re: separating staging/production deploys.
-  github_deploy_environment = "production"
+  # Matches the `environment:` value in .github/workflows/deploy.yml.
+  github_deploy_environment = "staging"
 
   oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
 
