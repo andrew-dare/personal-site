@@ -8,14 +8,14 @@ permissions:
   contents: read
 
 concurrency:
-  group: deploy-prod
+  group: deploy-production
   cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     environment:
-      name: prod
+      name: production
       url: ${{ vars.PROD_SITE_URL }}
     steps:
       - name: Checkout

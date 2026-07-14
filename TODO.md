@@ -59,14 +59,24 @@
   happens, leaving them orphaned but harmless (small ongoing cost).
   Decommission them as a separate, deliberate step once the new site is
   confirmed working.
-- Staging's `deploy.yml` job is named `environment: production` even though it
-  deploys the *staging* domain — a leftover from before the staging/production
-  split. The new production workflow avoids colliding with it by using a
-  distinct environment name (`prod` instead of `production`), which works fine
-  as a permanent name, but if you'd rather have the "correct" name on the real
-  production stack: rename staging's environment (in both `deploy.yml` and
-  `environments/staging/site.tf`) to `"staging"`, reapply staging, then rename
-  production's from `"prod"` to `"production"` and reapply. Not required.
+- GitHub Environments renamed to their correct names: staging's
+  `deploy.yml` job now uses `environment: staging` (was `production`),
+  production's `deploy-production.yml` now uses `environment: production`
+  (was `prod`) — matched by `github_deploy_environment` in each stack's
+  `site.tf`. **Requires reapplying both stacks before this is safe to
+  merge, not after** — each IAM role's OIDC trust policy only accepts the
+  *old* environment name until reapplied, and staging's `deploy.yml` runs
+  automatically on every push to `main`, including the push that merges
+  this very change. Reapply staging first (confirmed via `terraform plan`:
+  updates the trust policy's `sub` condition from `environment:production`
+  to `environment:staging`, 1 to add/4 to change/1 to destroy — the rest is
+  pre-existing drift from earlier unapplied changes, not new from this),
+  then merge. Production isn't live yet regardless, so its rename carries
+  no timing risk — just bundled into the same still-pending cutover apply.
+  The old `production` (staging's) and `prod` (production's) GitHub
+  Environments will be left behind as unused entries in Settings →
+  Environments once the new names are in use — delete them there manually
+  whenever, low priority.
 - Set up Cloudflare Web Analytics to actually get traffic data: create the
   site(s) in the Cloudflare dashboard (Analytics & Logs → Web Analytics —
   doesn't require DNS to be on Cloudflare) and set the resulting token(s) as

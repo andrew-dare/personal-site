@@ -16,12 +16,8 @@ module "site" {
 
   github_repo          = "andrew-dare/personal-site"
   github_deploy_branch = "main"
-  # Deliberately not "production" — staging's deploy.yml job is (confusingly)
-  # also named "production" even though it deploys staging (see TODO.md), and
-  # reusing that name here would mean both stacks' IAM roles trust the same
-  # OIDC subject. "prod" keeps this stack's trust policy distinct without
-  # needing to coordinate a rename of staging's still-not-yet-reapplied setup.
-  github_deploy_environment = "prod"
+  # Matches the `environment:` value in .github/workflows/deploy-production.yml.
+  github_deploy_environment = "production"
 
   oidc_provider_arn = data.aws_iam_openid_connect_provider.github.arn
 
